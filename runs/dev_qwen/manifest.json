@@ -1,0 +1,17 @@
+{
+ "name": "dev_qwen",
+ "split": "dev",
+ "limit": 1000000000,
+ "seed": 0,
+ "rounds": 3,
+ "debater": "ollama:qwen2.5:7b",
+ "judge": "ollama:qwen2.5:3b",
+ "alt_judges": [],
+ "budget_usd": 0.0,
+ "git_commit": "a201cb0c08e5a0c6b35078dffcfa8292a3fdd8f9",
+ "started": "2026-11-25T16:35:14",
+ "already_done": 0,
+ "status": "complete",
+ "spent_usd": 0.0,
+ "lifetime_usd": 0.0
+}

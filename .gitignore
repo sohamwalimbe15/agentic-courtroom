@@ -1,0 +1,10 @@
+.venv/
+__pycache__/
+.cache/
+data/*.jsonl
+.ruff_cache/
+.pytest_cache/
+.env
+.DS_Store
+runs/*/records.jsonl.bak
+runs/*.log

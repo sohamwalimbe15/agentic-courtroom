@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Courtroom</title>
+<style>
+  :root {
+    --ink: #2a2118; --paper: #fbf6ea; --wood: #6b4226; --wood-dark: #4a2c17;
+    --pro: #2f6db5; --con: #b5452f; --gold: #d8b45a;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; color: var(--ink); font: 16px/1.5 Georgia, "Times New Roman", serif;
+    background: #20160f;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 1.5rem 1rem 4rem; }
+  h1 { margin: 0; color: var(--gold); font-size: 2.2rem; letter-spacing: .08em; text-transform: uppercase; }
+  .tag { margin: .2rem 0 1.2rem; color: #cdbb9a; }
+
+  /* case filing */
+  .filing { background: var(--paper); border-radius: 6px; padding: 1.1rem 1.25rem; box-shadow: 0 6px 24px #0008; }
+  .filing label { font-weight: bold; }
+  .row { display: flex; gap: .6rem; margin-top: .4rem; }
+  input[type=text] {
+    flex: 1; font: inherit; padding: .65rem .8rem; border: 2px solid #c9b88f; border-radius: 4px; background: #fffdf7;
+  }
+  button.go {
+    font: inherit; font-weight: bold; padding: .65rem 1.3rem; border: 0; border-radius: 4px; cursor: pointer;
+    color: #2a1d08; background: linear-gradient(#e6c56e, #c99b32); box-shadow: 0 2px 0 #8f6a1c;
+  }
+  button.go:disabled { opacity: .55; cursor: wait; }
+  .chips { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .7rem; }
+  .chip {
+    font: inherit; font-size: .85rem; padding: .25rem .7rem; border-radius: 99px; cursor: pointer;
+    border: 1px solid #c9b88f; background: #f1e7cc; color: var(--ink);
+  }
+  .chip:hover { background: #ead9a8; }
+  details { margin-top: .7rem; font-size: .92rem; }
+  textarea { width: 100%; font: inherit; padding: .5rem; margin-top: .4rem; border: 2px solid #c9b88f; border-radius: 4px; }
+  #err { color: #a3261a; margin-top: .6rem; font-weight: bold; }
+
+  /* scene */
+  #court { margin-top: 1.5rem; }
+  #phase { text-align: center; color: var(--gold); min-height: 1.6em; margin-bottom: .5rem; font-style: italic; }
+  .scene { border-radius: 8px; overflow: hidden; box-shadow: 0 10px 40px #000a; }
+  .wall {
+    background:
+      repeating-linear-gradient(90deg, #0000 0 118px, #0003 118px 120px),
+      linear-gradient(#4a3322, #33231a);
+    padding: 1rem 1rem 0; text-align: center; position: relative;
+  }
+  .seal { position: absolute; top: 14px; left: 50%; width: 120px; margin-left: -60px; opacity: .22; }
+  .judge { position: relative; width: 190px; margin: 0 auto; z-index: 1; }
+  .judge svg { display: block; width: 100%; }
+  .bench {
+    margin: -34px auto 0; width: min(560px, 92%); height: 62px; position: relative; z-index: 2;
+    background: linear-gradient(#7d4e2c, var(--wood-dark)); border-radius: 6px 6px 0 0;
+    border-top: 5px solid #9a6a40; box-shadow: inset 0 -8px 12px #0005;
+  }
+  .plate {
+    position: absolute; left: 50%; top: 16px; transform: translateX(-50%); padding: .1rem .8rem; white-space: nowrap;
+    background: linear-gradient(#e6c56e, #b98b2a); color: #2a1d08; font-size: .8rem; font-weight: bold; border-radius: 3px;
+  }
+  .floor {
+    display: grid; grid-template-columns: 1fr 260px 1fr; gap: .5rem; align-items: end;
+    padding: 1.2rem 1rem 1.4rem; min-height: 420px;
+    background: repeating-linear-gradient(90deg, #0000 0 78px, #0002 78px 80px), linear-gradient(#9b7650, #6f5236);
+  }
+  .side { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; min-width: 0; }
+  .bubble {
+    position: relative; width: 100%; max-height: 250px; overflow: auto; padding: .7rem .85rem; margin-bottom: 18px;
+    background: var(--paper); border-radius: 10px; font-size: .88rem; line-height: 1.45; white-space: pre-wrap;
+    box-shadow: 0 3px 10px #0005; opacity: 0; transform: translateY(6px); transition: opacity .3s, transform .3s;
+  }
+  .bubble.on { opacity: 1; transform: none; }
+  .pro .bubble { border-top: 5px solid var(--pro); }
+  .con .bubble { border-top: 5px solid var(--con); }
+  .dots span { display: inline-block; width: 7px; height: 7px; margin: 0 2px; border-radius: 50%; background: #777; animation: blink 1s infinite; }
+  .dots span:nth-child(2) { animation-delay: .2s; } .dots span:nth-child(3) { animation-delay: .4s; }
+  @keyframes blink { 0%, 80%, 100% { opacity: .2; } 40% { opacity: 1; } }
+  .figure { width: 150px; position: relative; z-index: 1; }
+  .figure svg { display: block; width: 100%; }
+  .speaking .figure svg { animation: bob .7s ease-in-out infinite; }
+  @keyframes bob { 50% { transform: translateY(-5px); } }
+  .podium {
+    width: 170px; height: 64px; margin-top: -52px; position: relative; z-index: 2; text-align: center;
+    background: linear-gradient(#7d4e2c, var(--wood-dark)); border-radius: 5px 5px 0 0; border-top: 4px solid #9a6a40;
+  }
+  .podium b { display: block; margin-top: 10px; color: #f3e5c8; font-size: .85rem; }
+  .podium small { color: #d8c49d; font-size: .7rem; }
+  .pro .podium { box-shadow: inset 0 4px 0 var(--pro); } .con .podium { box-shadow: inset 0 4px 0 var(--con); }
+
+  .center { display: flex; flex-direction: column; gap: .5rem; align-items: center; }
+  .exhibits { width: 100%; display: flex; flex-direction: column; gap: .4rem; max-height: 230px; overflow: auto; }
+  .exh {
+    background: #f4ead0; border-left: 5px solid var(--gold); padding: .3rem .5rem; font-size: .75rem; line-height: 1.3;
+    border-radius: 3px; box-shadow: 0 2px 5px #0004; animation: slide .4s both;
+  }
+  .exh b { display: block; font-size: .72rem; text-transform: uppercase; color: #8a6a1c; }
+  .exh a { color: var(--ink); font-weight: bold; }
+  .exh p { margin: .15rem 0 0; color: #4a3f30; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  @keyframes slide { from { opacity: 0; transform: translateX(-12px); } }
+  .qs { color: #f3e5c8; font-size: .75rem; text-align: center; }
+  .scales { width: 190px; }
+  .scales g.pan { transition: transform 1.4s cubic-bezier(.3, 1.4, .5, 1); }
+  .scales #beam { transition: transform 1.4s cubic-bezier(.3, 1.4, .5, 1); transform-origin: 100px 30px; }
+
+  /* gavel strike */
+  .judge.strike #gavel { animation: strike .5s 3; transform-origin: 150px 120px; }
+  @keyframes strike { 40% { transform: rotate(-35deg); } 60% { transform: rotate(8deg); } }
+
+  /* verdict + log */
+  #verdict { display: none; margin-top: 1rem; padding: 1rem 1.25rem; background: var(--paper); border-radius: 6px; border: 3px double var(--wood); }
+  #verdict h2 { margin: 0 0 .5rem; font-size: 1.3rem; }
+  .meter { display: flex; height: 26px; border-radius: 4px; overflow: hidden; color: #fff; font: bold .85rem system-ui; }
+  .meter div { display: flex; align-items: center; justify-content: center; transition: width 1.2s; }
+  .meter .p { background: var(--pro); } .meter .c { background: var(--con); }
+  #verdict small { display: block; margin-top: .5rem; color: #5b4f3d; }
+  #log { margin-top: 1rem; color: #e8dcc2; }
+  #log h3 { color: var(--gold); margin-bottom: .3rem; }
+  .entry { margin: .5rem 0; padding: .55rem .8rem; background: #2d2118; border-left: 5px solid #888; border-radius: 4px; white-space: pre-wrap; font-size: .92rem; }
+  .entry.A { border-color: var(--pro); } .entry.B { border-color: var(--con); }
+  .entry b { color: var(--gold); }
+  .legend { font-size: .82rem; color: #bda985; }
+  .q { background: #cfeac6; color: #173b10; padding: 0 2px; border-radius: 2px; }
+  .q.bad { background: #f6cdc7; color: #5c120a; text-decoration: line-through; }
+  @media (max-width: 760px) { .floor { grid-template-columns: 1fr; } .center { order: -1; } }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+
+<div class="wrap">
+  <h1>Courtroom</h1>
+  <p class="tag">Put an opinion on trial. A clerk looks it up, two lawyers argue it, and a judge who never sees the sources decides.</p>
+
+  <form class="filing" id="form">
+    <label for="topic">The proposition</label>
+    <div class="row">
+      <input type="text" id="topic" maxlength="300" autocomplete="off"
+             placeholder="e.g. Remote work is better than working in an office">
+      <button class="go" id="go">Begin trial</button>
+    </div>
+    <div class="chips" id="chips"></div>
+    <details><summary>Use my own source text instead of searching</summary>
+      <textarea id="text" rows="4" placeholder="Paste an article or notes. The lawyers will quote from this."></textarea>
+    </details>
+    <div id="err"></div>
+  </form>
+
+  <div id="court" hidden>
+    <div id="phase"></div>
+    <div class="scene">
+      <div class="wall">
+        <svg class="seal" viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="none" stroke="#d8b45a" stroke-width="3"/><circle cx="50" cy="50" r="36" fill="none" stroke="#d8b45a" stroke-width="1.5"/><path d="M50 22v44M30 36h40M30 36l-8 18h16zM70 36l-8 18h16z" stroke="#d8b45a" stroke-width="2.5" fill="none"/></svg>
+        <div class="judge" id="judge"></div>
+        <div class="bench"><span class="plate" id="judgeplate">The Judge</span></div>
+      </div>
+      <div class="floor">
+        <div class="side pro" id="pro">
+          <div class="bubble" id="bubbleA"></div>
+          <div class="figure" id="figA"></div>
+          <div class="podium"><b>For</b><small id="debaterA"></small></div>
+        </div>
+        <div class="center">
+          <div class="qs" id="queries"></div>
+          <div class="exhibits" id="exhibits"></div>
+          <svg class="scales" viewBox="0 0 200 150" id="scales"></svg>
+        </div>
+        <div class="side con" id="con">
+          <div class="bubble" id="bubbleB"></div>
+          <div class="figure" id="figB"></div>
+          <div class="podium"><b>Against</b><small id="debaterB"></small></div>
+        </div>
+      </div>
+    </div>
+    <div id="verdict"></div>
+    <div id="log"></div>
+  </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const EXAMPLES = [
+  "Remote work is better than working in an office",
+  "Social media does more harm than good",
+  "Nuclear power is essential to fight climate change",
+  "Cities should ban cars from their centres",
+];
+EXAMPLES.forEach(t => {
+  const b = document.createElement("button");
+  b.type = "button"; b.className = "chip"; b.textContent = t;
+  b.onclick = () => { $("topic").value = t; };
+  $("chips").appendChild(b);
+});
+
+function lawyer(suit, hair) {
+  return `<svg viewBox="0 0 120 150">
+    <ellipse cx="60" cy="146" rx="42" ry="5" fill="#0003"/>
+    <path d="M16 150C16 92 36 74 60 74s44 18 44 76z" fill="${suit}"/>
+    <path d="M46 74l14 26 14-26z" fill="#fff"/><path d="M56 82l4 28 4-28z" fill="#1d1d1d"/>
+    <rect x="52" y="58" width="16" height="20" rx="6" fill="#e0b48c"/>
+    <circle cx="60" cy="40" r="24" fill="#efc9a2"/>
+    <path d="M35 40C32 12 88 12 85 40c-6-14-44-14-50 0z" fill="${hair}"/>
+    <circle cx="51" cy="42" r="2.6" fill="#222"/><circle cx="69" cy="42" r="2.6" fill="#222"/>
+    <path d="M52 53q8 5 16 0" stroke="#7a3b2a" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+  </svg>`;
+}
+const judgeSvg = `<svg viewBox="0 0 200 190">
+  <path d="M30 190C30 110 62 92 100 92s70 18 70 98z" fill="#17141a"/>
+  <path d="M84 92l16 40 16-40z" fill="#f2efe8"/>
+  <rect x="90" y="74" width="20" height="22" rx="7" fill="#e0b48c"/>
+  <circle cx="100" cy="56" r="28" fill="#efc9a2"/>
+  <g fill="#f4f1ea" stroke="#c9c3b4" stroke-width="1.5">
+    <circle cx="100" cy="26" r="20"/><circle cx="70" cy="40" r="14"/><circle cx="130" cy="40" r="14"/>
+    <circle cx="64" cy="62" r="13"/><circle cx="136" cy="62" r="13"/><circle cx="68" cy="82" r="11"/><circle cx="132" cy="82" r="11"/>
+  </g>
+  <path d="M76 44c10-12 38-12 48 0" fill="#f4f1ea" stroke="none"/>
+  <circle cx="90" cy="58" r="3" fill="#222"/><circle cx="110" cy="58" r="3" fill="#222"/>
+  <path d="M82 50l16-3M118 50l-16-3" stroke="#555" stroke-width="2.4" stroke-linecap="round"/>
+  <path d="M92 73h16" stroke="#7a3b2a" stroke-width="2.4" stroke-linecap="round"/>
+  <g id="gavel"><rect x="146" y="112" width="8" height="44" rx="3" fill="#8a5a2f"/>
+    <rect x="132" y="104" width="36" height="16" rx="4" fill="#a8723c"/></g>
+</svg>`;
+$("figA").innerHTML = lawyer("#2f6db5", "#3a2a1c");
+$("figB").innerHTML = lawyer("#b5452f", "#7a7a7a");
+$("judge").innerHTML = judgeSvg;
+
+const BEAM = 70;
+$("scales").innerHTML = `
+  <path d="M100 30v100M70 134h60l-8-10H78z" stroke="#d8b45a" stroke-width="5" fill="#d8b45a" stroke-linejoin="round"/>
+  <circle cx="100" cy="30" r="6" fill="#d8b45a"/>
+  <g id="beam"><rect x="${100 - BEAM}" y="27" width="${BEAM * 2}" height="6" rx="3" fill="#d8b45a"/></g>
+  <g class="pan" id="panL"><path d="M0 0L-22 44M0 0L22 44" stroke="#d8b45a" stroke-width="1.6"/>
+    <path d="M-28 44h56a28 14 0 0 1-56 0z" fill="#2f6db5" stroke="#d8b45a" stroke-width="2"/></g>
+  <g class="pan" id="panR"><path d="M0 0L-22 44M0 0L22 44" stroke="#d8b45a" stroke-width="1.6"/>
+    <path d="M-28 44h56a28 14 0 0 1-56 0z" fill="#b5452f" stroke="#d8b45a" stroke-width="2"/></g>`;
+
+function tilt(deg) {  // negative = left (For) side drops
+  const a = deg * Math.PI / 180;
+  $("beam").style.transform = `rotate(${deg}deg)`;
+  $("panL").style.transform = `translate(${100 - BEAM * Math.cos(a)}px, ${30 - BEAM * Math.sin(a)}px)`;
+  $("panR").style.transform = `translate(${100 + BEAM * Math.cos(a)}px, ${30 + BEAM * Math.sin(a)}px)`;
+}
+
+function el(parent, tag, cls, text) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text !== undefined) e.textContent = text;
+  parent.appendChild(e);
+  return e;
+}
+function fill(node, segs) {
+  segs.forEach(s => s.q === undefined ? node.append(s.t) : el(node, "span", "q" + (s.ok ? "" : " bad"), s.q));
+}
+
+function reset() {
+  ["bubbleA", "bubbleB"].forEach(i => { $(i).className = "bubble"; $(i).replaceChildren(); });
+  ["exhibits", "queries", "verdict", "log"].forEach(i => $(i).replaceChildren());
+  el($("log"), "h3", "", "Transcript");
+  el($("log"), "div", "legend", "Green quotes were found in the sources by code. Red, struck-through quotes were not.");
+  $("verdict").style.display = "none";
+  $("judge").classList.remove("strike");
+  $("pro").classList.remove("speaking"); $("con").classList.remove("speaking");
+  tilt(0);
+}
+
+function speaking(slot, on) {
+  const side = slot === "A" ? "pro" : "con", b = $("bubble" + slot);
+  $(side).classList.toggle("speaking", on);
+  if (on) {
+    b.replaceChildren(); b.className = "bubble on";
+    const d = el(b, "span", "dots"); d.innerHTML = "<span></span><span></span><span></span>";
+  }
+}
+
+function handle(ev, d) {
+  if (ev === "start") {
+    $("debaterA").textContent = $("debaterB").textContent = d.debater;
+    $("judgeplate").textContent = "The Judge · " + d.judge;
+  } else if (ev === "researching") {
+    $("phase").textContent = "The clerk is searching Wikipedia for evidence…";
+  } else if (ev === "research") {
+    if (d.queries.length) $("queries").textContent = "Searched: " + d.queries.join(" · ");
+    d.sources.forEach((s, i) => {
+      const x = el($("exhibits"), "div", "exh"); x.style.animationDelay = i * 0.15 + "s";
+      el(x, "b", "", "Exhibit " + (i + 1));
+      if (s.url) { const a = el(x, "a", "", s.title); a.href = s.url; a.target = "_blank"; } else el(x, "span", "", s.title);
+      el(x, "p", "", s.snippet);
+    });
+    if (!d.sources.length) el($("exhibits"), "div", "qs", "No sources found. The lawyers argue from general knowledge.");
+  } else if (ev === "speaking") {
+    $("phase").textContent = `Round ${d.round}: ${d.slot === "A" ? "the defence (For)" : "the opposition (Against)"} is speaking…`;
+    speaking(d.slot, true);
+  } else if (ev === "turn") {
+    speaking(d.slot, false);
+    const b = $("bubble" + d.slot); b.replaceChildren(); b.className = "bubble on"; fill(b, d.segments); b.scrollTop = 0;
+    const e = el($("log"), "div", "entry " + d.slot);
+    el(e, "b", "", `Round ${d.round} · ${d.slot === "A" ? "For" : "Against"}\n`);
+    fill(e, d.segments);
+  } else if (ev === "deliberating") {
+    $("phase").textContent = "The judge, who has not seen the sources, is deliberating…";
+  } else if (ev === "verdict") {
+    const pa = Math.round(d.pA * 100), pb = 100 - pa;
+    $("phase").textContent = "Order in the court.";
+    tilt(-(d.pA - 0.5) * 40);
+    $("judge").classList.add("strike");
+    const v = $("verdict"); v.style.display = "block";
+    const side = d.pA > 0.55 ? "The court finds for the proposition." : d.pA < 0.45 ? "The court finds against the proposition." : "Too close to call.";
+    el(v, "h2", "", side);
+    const m = el(v, "div", "meter");
+    const l = el(m, "div", "p", `For ${pa}%`); l.style.width = pa + "%";
+    const r = el(m, "div", "c", `Against ${pb}%`); r.style.width = pb + "%";
+    el(v, "small", "", "The judge scored which side argued better from the evidence, not which is true. Small models judge noisily; treat this as a demonstration.");
+  } else if (ev === "error") {
+    $("err").textContent = d.message; $("phase").textContent = "";
+  }
+}
+
+$("form").onsubmit = async e => {
+  e.preventDefault();
+  const topic = $("topic").value.trim(); $("err").textContent = "";
+  if (topic.length < 4) { $("err").textContent = "Write a proposition first."; return; }
+  $("go").disabled = true; $("court").hidden = false; reset();
+  $("court").scrollIntoView({behavior: "smooth"});
+  try {
+    const res = await fetch("/api/trial", {method: "POST", headers: {"content-type": "application/json"},
+      body: JSON.stringify({topic, text: $("text").value.trim() || null})});
+    if (!res.ok) { $("err").textContent = (await res.json()).detail || "request failed"; $("court").hidden = true; return; }
+    const reader = res.body.getReader(), dec = new TextDecoder(); let buf = "";
+    for (;;) {
+      const {done, value} = await reader.read(); if (done) break;
+      buf += dec.decode(value, {stream: true});
+      let i; while ((i = buf.indexOf("\n\n")) >= 0) {
+        const [a, b] = buf.slice(0, i).split("\n"); buf = buf.slice(i + 2);
+        handle(a.slice(7), JSON.parse(b.slice(6)));
+      }
+    }
+  } catch (x) { $("err").textContent = "Connection lost: " + x.message; }
+  finally { $("go").disabled = false; }
+};
+</script>
+</html>
